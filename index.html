@@ -30,6 +30,11 @@
     .boss-title { font-size: 20px; font-weight: 800; color: #ff4655; letter-spacing: 1px; }
     .timer-badge { display: inline-block; background: #ff4655; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
 
+    /* Selector de Exercicio */
+    .ex-selector { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; }
+    .ex-btn { background: #0b0c10; border: 1px solid #45a29e; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .ex-btn.active { background: #66fcf1; color: #0b0c10; font-weight: bold; }
+
     /* Video Canvas */
     .video-container { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
     video { display: none; }
@@ -40,7 +45,6 @@
     .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 6px; }
     .btn:hover { background: #45a29e; }
     .btn-sec { background: #333; color: #fff; }
-    .btn-danger { background: #ff4655; color: #fff; }
 
     /* Shop Grid */
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -72,7 +76,7 @@
 
       <!-- PAINEL DO BOSS -->
       <div class="boss-box">
-        <div class="boss-avatar" id="boss-icon">👾</div>
+        <div class="boss-avatar" id="boss-icon">🧟</div>
         <div class="boss-title" id="boss-name">...</div>
         <div class="timer-badge">ATAQUE EM: <span id="timer-txt">10</span>s</div>
       </div>
@@ -88,20 +92,25 @@
       <div style="margin-top: 15px; font-size: 13px; font-weight: bold; color: #66fcf1;">LOJA DE EQUIPAMENTOS</div>
       <div class="shop-grid">
         <div class="shop-item">
-          <div>⚔️ +1 Dano Base</div>
-          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 50 Moedas</button>
+          <div>⚔️ +5 Dano Base</div>
+          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 20 Moedas</button>
         </div>
         <div class="shop-item">
           <div>🧪 Cura +50 HP</div>
-          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('pocao')">🪙 30 Moedas</button>
+          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('pocao')">🪙 15 Moedas</button>
         </div>
       </div>
     </div>
 
     <!-- TELA DE CÂMERA E CONTROLES -->
     <div class="card">
-      <div style="text-align:center; font-weight:bold; margin-bottom:8px; color:#66fcf1;">VISÃO COMPUTACIONAL IA</div>
-      
+      <!-- SELETOR DE EXERCÍCIO -->
+      <div class="ex-selector">
+        <button class="ex-btn active" id="btn-flexao" onclick="mudarExercicio('flexao')">Flexão</button>
+        <button class="ex-btn" id="btn-agachamento" onclick="mudarExercicio('agachamento')">Agachamento</button>
+        <button class="ex-btn" id="btn-polichinelo" onclick="mudarExercicio('polichinelo')">Polichinelo</button>
+      </div>
+
       <div class="video-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
@@ -122,7 +131,7 @@
   </div>
 
   <script>
-    // --- AUDIO SINTETIZADO (SEM ARQUIVOS EXTERNOS) ---
+    // --- AUDIO SINTETIZADO ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function tocarSom(freq, tipo, duracao) {
       try {
@@ -135,14 +144,23 @@
       } catch(e) {}
     }
 
-    // --- CONFIGURAÇÃO DE CLASSES E JOGADOR ---
+    // --- CONFIGURAÇÃO DO JOGADOR ---
     let classe = null;
     let playerHp = 100, playerMaxHp = 100, lvl = 1, xp = 0, maxXp = 100, gold = 0;
+    let danoBase = 20; // DANO BAIXO INICIAL CONFORME PEDIDO
     let danoExtra = 0, multiplicadorXp = 1.0, chanceCritico = 0.1;
+    let exercicioAtual = "flexao";
+
+    function mudarExercicio(ex) {
+      exercicioAtual = ex;
+      document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-${ex}`).classList.add('active');
+      document.getElementById('log-txt').innerText = `Exercício alterado para: ${ex.toUpperCase()}`;
+    }
 
     function selecionarClasse(c) {
       classe = c;
-      if (c === 'Guerreiro') { danoExtra = 1; }
+      if (c === 'Guerreiro') { danoExtra = 5; }
       if (c === 'Mago') { multiplicadorXp = 1.5; }
       if (c === 'Ladino') { chanceCritico = 0.35; }
       
@@ -154,17 +172,17 @@
       atualizarHUD();
     }
 
-    // --- BASE DE BOSSES ---
+    // --- REBALANCEAMENTO DOS BOSSES: VIDA REDUZIDA E MOEDAS ESCALÁVEIS ---
     const bosses = [
-      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 20, icon: "🧟" },
-      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 40, icon: "💀" },
-      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 60, icon: "👺" },
-      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 120, icon: "👹" },
-      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, icon: "🐉" }
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟" },       // Ganha pouca moeda
+      { name: "ESQUELETO RECRUTA", hp: 30, xp: 50, gold: 15, icon: "💀" },
+      { name: "GOBLIN GUERREIRO", hp: 60, xp: 100, gold: 35, icon: "👺" },
+      { name: "ORC CHEFE", hp: 100, xp: 180, gold: 75, icon: "👹" },       // Ganha muita moeda na dificuldade alta
+      { name: "DRAGÃO DE FOGO", hp: 200, xp: 400, gold: 150, icon: "🐉" }
     ];
 
     let bIndex = 0, bHp = bosses[0].hp, reps = 0, defeated = false;
-    let tempoMaxAtaque = 10; // Começa com 10 segundos
+    let tempoMaxAtaque = 10; 
     let tempoRestante = 10;
     let timerInterval = null;
 
@@ -179,15 +197,14 @@
         document.getElementById('timer-txt').innerText = tempoRestante;
 
         if (tempoRestante <= 0) {
-          // Boss ataca o jogador
           let danoBoss = 10 + (bIndex * 5);
           playerHp -= danoBoss;
-          tocarSom(150, 'sawtooth', 0.3); // Som de dano levado
+          tocarSom(150, 'sawtooth', 0.3);
           mostrarPopUp(`-${danoBoss} HP`, true);
           
           if (playerHp <= 0) {
             playerHp = 0;
-            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça mais flexões para se recuperar!";
+            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça mais exercícios para se recuperar!";
             setTimeout(resetarBatalha, 2000);
           } else {
             document.getElementById('log-txt').innerText = `⚠️ O Boss te atacou! -${danoBoss} de Vida!`;
@@ -225,17 +242,16 @@
     function contarRepeticao(manual = false) {
       if (defeated || playerHp <= 0 || !classe) return;
 
-      // Cálculo de Dano e Crítico
-      let danoTotal = 1 + danoExtra;
+      let danoTotal = danoBase + danoExtra;
       let eCritico = Math.random() < chanceCritico;
       if (eCritico) danoTotal *= 2;
 
       reps++;
       bHp -= danoTotal;
-      tempoRestante = tempoMaxAtaque; // Reseta o tempo de ataque do boss ao acertar um golpe
+      tempoRestante = tempoMaxAtaque; 
       document.getElementById('timer-txt').innerText = tempoRestante;
 
-      tocarSom(eCritico ? 800 : 400, 'sine', 0.15); // Som de ataque
+      tocarSom(eCritico ? 800 : 400, 'sine', 0.15);
       mostrarPopUp(eCritico ? `💥 CRÍTICO! -${danoTotal}` : `-${danoTotal} HP`);
 
       if (bHp <= 0) {
@@ -249,7 +265,7 @@
 
         if (xp >= maxXp) { lvl++; xp -= maxXp; maxXp = Math.floor(maxXp * 1.5); playerMaxHp += 20; playerHp = playerMaxHp; }
         
-        tocarSom(600, 'triangle', 0.5); // Som de vitória
+        tocarSom(600, 'triangle', 0.5);
         document.getElementById('log-txt').innerText = `🏆 DERROTADO! +${xpGanha} XP / +${bosses[bIndex].gold} Moedas!`;
         document.getElementById('next-btn').style.display = 'block';
       }
@@ -259,7 +275,6 @@
     function proximoBoss() {
       if (bIndex < bosses.length - 1) {
         bIndex++;
-        // REGRA DE SEGUNDOS: Diminui 1s por inimigo derrotado (mínimo de 3s)
         tempoMaxAtaque = Math.max(3, 10 - bIndex);
       }
       bHp = bosses[bIndex].hp; reps = 0; defeated = false;
@@ -270,11 +285,11 @@
     }
 
     function comprarItem(tipo) {
-      if (tipo === 'espada' && gold >= 50) {
-        gold -= 50; danoExtra++;
-        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +1 de Dano Base.";
-      } else if (tipo === 'pocao' && gold >= 30) {
-        gold -= 30; playerHp = Math.min(playerMaxHp, playerHp + 50);
+      if (tipo === 'espada' && gold >= 20) {
+        gold -= 20; danoExtra += 5;
+        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +5 de Dano.";
+      } else if (tipo === 'pocao' && gold >= 15) {
+        gold -= 15; playerHp = Math.min(playerMaxHp, playerHp + 50);
         document.getElementById('log-txt').innerText = "🧪 Poção consumida! +50 de Vida.";
       } else {
         document.getElementById('log-txt').innerText = "🪙 Moedas insuficientes!";
@@ -291,7 +306,7 @@
       setTimeout(() => p.remove(), 600);
     }
 
-    // --- MEDIAPIPE AI LOGIC ---
+    // --- LÓGICA DE DETECÇÃO IA (MULTI-EXERCÍCIO) ---
     let estadoMovimento = "SUBIDA";
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('output_canvas');
@@ -316,18 +331,27 @@
         let cotovelo = results.poseLandmarks[13];
         let pulso = results.poseLandmarks[15];
         let quadril = results.poseLandmarks[23];
+        let joelho = results.poseLandmarks[25];
+        let tornozelo = results.poseLandmarks[27];
 
-        if (ombro && cotovelo && pulso && quadril) {
-          let angCotovelo = calcAngulo(ombro, cotovelo, pulso);
+        // DETECÇÃO POR EXERCÍCIO
+        if (exercicioAtual === 'flexao' && ombro && cotovelo && pulso && quadril) {
+          let ang = calcAngulo(ombro, cotovelo, pulso);
           let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
-
           if (corpoHorizontal) {
-            if (angCotovelo < 95 && estadoMovimento === "SUBIDA") { estadoMovimento = "DESCIDA"; }
-            if (angCotovelo > 155 && estadoMovimento === "DESCIDA") {
-              estadoMovimento = "SUBIDA";
-              contarRepeticao();
-            }
+            if (ang < 95 && estadoMovimento === "SUBIDA") estadoMovimento = "DESCIDA";
+            if (ang > 155 && estadoMovimento === "DESCIDA") { estadoMovimento = "SUBIDA"; contarRepeticao(); }
           }
+        } 
+        else if (exercicioAtual === 'agachamento' && quadril && joelho && tornozelo) {
+          let angJoelho = calcAngulo(quadril, joelho, tornozelo);
+          if (angJoelho < 100 && estadoMovimento === "SUBIDA") estadoMovimento = "DESCIDA";
+          if (angJoelho > 160 && estadoMovimento === "DESCIDA") { estadoMovimento = "SUBIDA"; contarRepeticao(); }
+        }
+        else if (exercicioAtual === 'polichinelo' && pulso && ombro) {
+          let maosNoAlto = pulso.y < ombro.y;
+          if (maosNoAlto && estadoMovimento === "SUBIDA") estadoMovimento = "DESCIDA";
+          if (!maosNoAlto && estadoMovimento === "DESCIDA") { estadoMovimento = "SUBIDA"; contarRepeticao(); }
         }
       }
       ctx.restore();
