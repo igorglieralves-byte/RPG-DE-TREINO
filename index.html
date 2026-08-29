@@ -3,271 +3,226 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Quest - RPG Fitness & AI Cam</title>
+  <title>Training Quest - Fitness RPG AI Pro</title>
   
-  <!-- MediaPipe / AI para Visão Computacional -->
+  <!-- MediaPipe & Drawing Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    body { background-color: #0d0e15; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+    body { background-color: #0b0c10; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
     
-    .game-container {
-      display: flex; flex-wrap: wrap; gap: 20px; max-width: 900px; width: 100%; justify-content: center;
-    }
+    .game-container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 950px; width: 100%; justify-content: center; }
 
-    .game-card {
-      background: #161823; width: 380px; border-radius: 20px; padding: 20px;
-      border: 1px solid #2a2d3d; text-align: center; position: relative; overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
+    /* Card RPG */
+    .card { background: #1f2833; width: 420px; border-radius: 16px; padding: 20px; border: 1px solid #45a29e; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
 
     /* Player HUD */
-    .player-hud { display: flex; align-items: center; background: #1f2232; padding: 10px 14px; border-radius: 12px; margin-bottom: 15px; }
-    .level-badge { background: #ff4655; color: white; font-weight: bold; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .player-info { flex: 1; margin: 0 10px; text-align: left; }
-    .bar-bg { background: #0d0e15; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
-    .xp-fill { background: #ffc107; height: 100%; width: 0%; transition: width 0.3s; }
-    .hp-player-fill { background: #4caf50; height: 100%; width: 100%; transition: width 0.3s; }
+    .hud { display: flex; align-items: center; background: #0b0c10; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
+    .level { background: #66fcf1; color: #0b0c10; font-weight: 900; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .hud-info { flex: 1; margin: 0 12px; }
+    .bar { background: #1f2833; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
+    .bar-fill { height: 100%; width: 0%; transition: width 0.3s; }
 
-    /* Inventory & Gold */
-    .stats-row { display: flex; justify-content: space-between; font-size: 13px; color: #ffc107; margin-bottom: 15px; font-weight: bold; }
+    /* Boss Display */
+    .boss-container { text-align: center; margin: 15px 0; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .boss-img { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 70, 85, 0.5)); transition: transform 0.1s; }
+    .boss-name { font-size: 20px; font-weight: 800; color: #66fcf1; margin-top: 10px; letter-spacing: 1px; }
 
-    /* Boss Area */
-    .boss-avatar { font-size: 80px; margin: 10px 0; transition: transform 0.1s; user-select: none; }
-    .boss-name { font-size: 18px; font-weight: bold; color: #ff4655; letter-spacing: 1px; }
-    .boss-hp-bg { background: rgba(255, 70, 85, 0.2); height: 16px; border-radius: 8px; overflow: hidden; margin: 10px 0 4px 0; }
-    .boss-hp-fill { background: #ff4655; height: 100%; width: 100%; transition: width 0.2s; }
+    /* Camera Box */
+    .video-container { position: relative; width: 100%; height: 280px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
+    video { display: none; }
+    canvas { width: 100%; height: 100%; object-fit: cover; }
 
-    /* Action & Camera Container */
-    .camera-card {
-      background: #161823; width: 380px; border-radius: 20px; padding: 20px;
-      border: 1px solid #2a2d3d; display: flex; flex-direction: column; align-items: center;
-    }
-
-    .video-box { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; }
-    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-
-    .counter { font-size: 40px; font-weight: 900; margin: 10px 0; font-family: monospace; }
+    .counter { font-size: 46px; font-weight: 900; text-align: center; margin: 10px 0; font-family: monospace; color: #66fcf1; }
     
-    .btn {
-      background: #ff4655; color: white; border: none; width: 100%; padding: 14px;
-      font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 8px;
-    }
-    .btn:active { transform: scale(0.98); }
-    .btn-secondary { background: #2a2d3d; }
+    .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+    .btn:hover { background: #45a29e; }
+    .btn-sec { background: #333; color: #fff; margin-top: 8px; }
 
-    .damage-popup {
-      position: absolute; color: #ff4655; font-size: 32px; font-weight: 900;
-      pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 35%;
-    }
-    @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
+    .damage-pop { position: absolute; color: #ff4655; font-size: 36px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 40%; }
+    @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
   </style>
 </head>
 <body>
 
   <div class="game-container">
-    <!-- JOGO / RPG HUD -->
-    <div class="game-card">
-      <div class="player-hud">
-        <div class="level-badge" id="player-level">1</div>
-        <div class="player-info">
-          <div style="display:flex; justify-size:space-between; font-size:12px;">
-            <strong>GUERREIRO</strong>
-            <span id="player-hp-text">100/100 HP</span>
+    <!-- TELA DE JOGO / BATALHA -->
+    <div class="card">
+      <div class="hud">
+        <div class="level" id="player-lvl">1</div>
+        <div class="hud-info">
+          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
+            <span>GUERREIRO</span>
+            <span id="gold-cnt">🪙 0</span>
           </div>
-          <div class="bar-bg"><div class="hp-player-fill" id="player-hp-fill"></div></div>
-          <div class="bar-bg"><div class="xp-fill" id="xp-fill"></div></div>
+          <div class="bar"><div class="bar-fill" id="xp-bar" style="background:#66fcf1;"></div></div>
         </div>
       </div>
 
-      <div class="stats-row">
-        <span>🪙 MOEDAS: <span id="gold-text">0</span></span>
-        <span>🔥 STREAK: <span id="streak-text">1</span> DIA</span>
+      <div class="boss-container">
+        <img id="boss-img" class="boss-img" src="" alt="Boss">
+        <div class="boss-name" id="boss-name">...</div>
       </div>
 
-      <div style="font-size: 12px; color: #888;" id="location-text">📍 MAPA: FLORESTA (FASE 1/3)</div>
-      <div class="boss-avatar" id="boss-avatar">🧟</div>
-      <div class="boss-name" id="boss-name">ZUMBI SOMBRIO</div>
-      
-      <div class="boss-hp-bg"><div class="boss-hp-fill" id="boss-hp-fill"></div></div>
-      <div style="font-size: 13px; color: #aaa; margin-bottom: 15px;" id="boss-hp-text">10 / 10 HP</div>
+      <div class="bar" style="height:16px; background:rgba(255,70,85,0.2);"><div class="bar-fill" id="boss-hp-bar" style="background:#ff4655; width:100%;"></div></div>
+      <div style="text-align:center; font-size:13px; color:#aaa; margin:5px 0 15px 0;" id="boss-hp-txt">0/0 HP</div>
 
-      <div style="font-size: 13px; color: #ddd; background: #1f2232; padding: 10px; border-radius: 8px;" id="log-text">
-        Faça o exercício em frente à câmera para atacar!
-      </div>
-      
-      <button class="btn btn-secondary" onclick="proximoBoss()" id="next-btn" style="display:none;">PRÓXIMA BATALHA ⚔️</button>
+      <div style="background:#0b0c10; padding:10px; border-radius:8px; font-size:13px; text-align:center;" id="log-txt">Fique em posição de flexão em frente à câmera.</div>
+      <button class="btn btn-sec" id="next-btn" onclick="proximoBoss()" style="display:none;">PRÓXIMO INIMIGO ⚔️</button>
     </div>
 
-    <!-- CÂMERA E CONTROLE DE EXERCÍCIO -->
-    <div class="camera-card">
-      <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;" id="exercise-title">EXERCÍCIO: FLEXÃO</div>
+    <!-- TELA DE CÂMERA E IA -->
+    <div class="card">
+      <div style="text-align:center; font-weight:bold; margin-bottom:10px; color:#66fcf1;">DETECÇÃO DE EXERCÍCIO COM IA</div>
       
-      <div class="video-box">
+      <div class="video-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
       </div>
 
-      <div class="counter" id="counter-text">0 / 10</div>
+      <div class="counter" id="rep-cnt">0 / 0</div>
       
-      <button class="btn" id="start-cam-btn" onclick="iniciarCamera()">🎥 LIGAR CÂMERA & DETECTAR</button>
-      <button class="btn btn-secondary" onclick="executarRepeticaoManual()" style="margin-top:5px;">+1 REP MANUAL (SEM CÂMERA)</button>
+      <button class="btn" id="cam-btn" onclick="iniciarCamera()">🎥 LIGAR CÂMERA DE TREINO</button>
+      <button class="btn btn-sec" onclick="contarRepeticao(true)">+1 REP MANUAL</button>
     </div>
   </div>
 
   <script>
-    // --- BANCO DE BOSSES E FASES ---
+    // --- LISTA DE BOSSES COM ARTES RPG REALISTAS ---
     const bosses = [
-      { name: "ZUMBI SOMBRIO", avatar: "🧟", hp: 10, xp: 30, gold: 10, ex: "FLEXÃO" },
-      { name: "ESQUELETO GUARDIÃO", avatar: "💀", hp: 20, xp: 50, gold: 20, ex: "FLEXÃO" },
-      { name: "GOBLIN GUERREIRO", avatar: "👹", hp: 30, xp: 80, gold: 35, ex: "FLEXÃO" },
-      { name: "ORC CHEFE", avatar: "👺", hp: 50, xp: 120, gold: 50, ex: "FLEXÃO" },
-      { name: "DRAGÃO ANCIÃO", avatar: "🐉", hp: 100, xp: 300, gold: 150, ex: "FLEXÃO" }
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 15, img: "https://img.icons8.com/isometric/100/zombie.png" },
+      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 30, img: "https://img.icons8.com/isometric/100/skeleton.png" },
+      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 50, img: "https://img.icons8.com/isometric/100/goblin.png" },
+      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 100, img: "https://img.icons8.com/isometric/100/orc.png" },
+      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, img: "https://img.icons8.com/isometric/100/dragon.png" }
     ];
 
-    let currentBossIndex = 0;
-    let playerLevel = 1, playerXp = 0, maxXp = 100, gold = 0;
-    let bossHp = bosses[0].hp, repsDone = 0, isDefeated = false;
+    let bIndex = 0, lvl = 1, xp = 0, maxXp = 100, gold = 0;
+    let bHp = bosses[0].hp, reps = 0, defeated = false;
 
-    // --- CARREGAR PROGRESSO SALVO ---
-    function carregarJogo() {
-      const salvo = JSON.parse(localStorage.getItem('training_quest_save'));
-      if (salvo) {
-        playerLevel = salvo.level; playerXp = salvo.xp; maxXp = salvo.maxXp;
-        gold = salvo.gold; currentBossIndex = salvo.bossIndex;
-        bossHp = bosses[currentBossIndex].hp;
+    function atualizarHUD() {
+      const b = bosses[bIndex];
+      document.getElementById('boss-name').innerText = b.name;
+      document.getElementById('boss-img').src = b.img;
+      document.getElementById('boss-hp-bar').style.width = (bHp / b.hp * 100) + '%';
+      document.getElementById('boss-hp-txt').innerText = `${bHp} / ${b.hp} HP`;
+      document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
+      document.getElementById('player-lvl').innerText = lvl;
+      document.getElementById('xp-bar').style.width = (xp / maxXp * 100) + '%';
+      document.getElementById('gold-cnt').innerText = `🪙 ${gold}`;
+    }
+
+    function contarRepeticao(manual = false) {
+      if (defeated) return;
+      reps++;
+      bHp--;
+      
+      // Animação de dano no Boss
+      const img = document.getElementById('boss-img');
+      img.style.transform = 'scale(1.2) rotate(5deg)';
+      setTimeout(() => img.style.transform = 'scale(1)', 100);
+
+      mostrarPopUp("-1 HP");
+
+      if (bHp <= 0) {
+        bHp = 0;
+        defeated = true;
+        gold += bosses[bIndex].gold;
+        xp += bosses[bIndex].xp;
+        if (xp >= maxXp) { lvl++; xp -= maxXp; maxXp = Math.floor(maxXp * 1.5); }
+        document.getElementById('log-txt').innerText = `🏆 INIMIGO DERROTADO! +${bosses[bIndex].xp} XP / +${bosses[bIndex].gold} Moedas!`;
+        document.getElementById('next-btn').style.display = 'block';
       }
       atualizarHUD();
     }
 
-    function salvarJogo() {
-      localStorage.setItem('training_quest_save', JSON.stringify({
-        level: playerLevel, xp: playerXp, maxXp: maxXp, gold: gold, bossIndex: currentBossIndex
-      }));
-    }
-
-    // --- SISTEMA DE COMBATE ---
-    function executarRepeticaoManual() {
-      if (isDefeated) return;
-      repsDone++;
-      bossHp--;
-      mostrarDano("-1 HP");
-      
-      if (bossHp <= 0) {
-        bossHp = 0;
-        isDefeated = true;
-        derrotoBoss();
-      }
-      atualizarHUD();
-    }
-
-    function mostrarDano(texto) {
-      const popup = document.createElement('div');
-      popup.className = 'damage-popup';
-      popup.innerText = texto;
-      document.querySelector('.game-card').appendChild(popup);
-      setTimeout(() => popup.remove(), 600);
-    }
-
-    function derrotoBoss() {
-      const boss = bosses[currentBossIndex];
-      gold += boss.gold;
-      playerXp += boss.xp;
-      
-      if (playerXp >= maxXp) {
-        playerLevel++;
-        playerXp -= maxXp;
-        maxXp = Math.floor(maxXp * 1.5);
-      }
-
-      document.getElementById('boss-avatar').innerText = "💥";
-      document.getElementById('log-text').innerText = `🏆 VITÓRIA! +${boss.xp} XP e +${boss.gold} Moedas!`;
-      document.getElementById('next-btn').style.display = 'block';
-      salvarJogo();
+    function mostrarPopUp(txt) {
+      const p = document.createElement('div');
+      p.className = 'damage-pop';
+      p.innerText = txt;
+      document.querySelector('.card').appendChild(p);
+      setTimeout(() => p.remove(), 600);
     }
 
     function proximoBoss() {
-      if (currentBossIndex < bosses.length - 1) currentBossIndex++;
-      bossHp = bosses[currentBossIndex].hp;
-      repsDone = 0;
-      isDefeated = false;
+      if (bIndex < bosses.length - 1) bIndex++;
+      bHp = bosses[bIndex].hp; reps = 0; defeated = false;
       document.getElementById('next-btn').style.display = 'none';
-      document.getElementById('log-text').innerText = "Batalha iniciada!";
+      document.getElementById('log-txt').innerText = "Em combate!";
       atualizarHUD();
     }
 
-    function atualizarHUD() {
-      const boss = bosses[currentBossIndex];
-      document.getElementById('boss-name').innerText = boss.name;
-      document.getElementById('boss-avatar').innerText = isDefeated ? "💥" : boss.avatar;
-      document.getElementById('boss-hp-fill').style.width = (bossHp / boss.hp * 100) + '%';
-      document.getElementById('boss-hp-text').innerText = `${bossHp} / ${boss.hp} HP`;
-      
-      document.getElementById('counter-text').innerText = `${repsDone} / ${boss.hp}`;
-      document.getElementById('player-level').innerText = playerLevel;
-      document.getElementById('xp-fill').style.width = (playerXp / maxXp * 100) + '%';
-      document.getElementById('gold-text').innerText = gold;
+    // --- DETECÇÃO DE VISÃO COMPUTACIONAL COM FILTRO ANTI-BUG E ESQUELETO VISUAL ---
+    let estadoMovimento = "SUBIDA";
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('output_canvas');
+    const ctx = canvas.getContext('2d');
+
+    function calcAngulo(a, b, c) {
+      let rad = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+      let ang = Math.abs(rad * 180.0 / Math.PI);
+      return ang > 180.0 ? 360.0 - ang : ang;
     }
 
-    // --- DETECÇÃO DA CÂMERA (IA MEDIAPIPE) ---
-    let flexaoEstado = "CIMA";
-    const videoElement = document.getElementById('webcam');
-    const canvasElement = document.getElementById('output_canvas');
-    const canvasCtx = canvasElement.getContext('2d');
-
-    function calcularAngulo(A, B, C) {
-      let rad = Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
-      let angulo = Math.abs(rad * 180.0 / Math.PI);
-      if (angulo > 180.0) angulo = 360.0 - angulo;
-      return angulo;
-    }
-
-    function onResults(results) {
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    function processarPose(results) {
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
       if (results.poseLandmarks) {
-        // Pontos do ombro (11), cotovelo (13) e pulso (15)
+        // 1. Desenha as "linhas" do esqueleto na tela
+        drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#66fcf1', lineWidth: 3 });
+        drawLandmarks(ctx, results.poseLandmarks, { color: '#ff4655', lineWidth: 2, radius: 4 });
+
+        // 2. Extrai articulações do braço e tronco
         let ombro = results.poseLandmarks[11];
         let cotovelo = results.poseLandmarks[13];
         let pulso = results.poseLandmarks[15];
+        let quadril = results.poseLandmarks[23];
 
-        if (ombro && cotovelo && pulso) {
-          let angulo = calcularAngulo(ombro, cotovelo, pulso);
+        if (ombro && cotovelo && pulso && quadril) {
+          let angCotovelo = calcAngulo(ombro, cotovelo, pulso);
+          
+          // FILTRO ANTI-BUG: Valida se o ombro e o quadril estão no mesmo plano horizontal (posição de prancha/flexão)
+          let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
 
-          // Lógica de Flexão: Cotovelo < 90 graus (Desceu), Cotovelo > 160 (Subiu)
-          if (angulo < 90 && flexaoEstado === "CIMA") {
-            flexaoEstado = "BAIXO";
-          }
-          if (angulo > 160 && flexaoEstado === "BAIXO") {
-            flexaoEstado = "CIMA";
-            executarRepeticaoManual(); // Conta a repetição no jogo
+          if (corpoHorizontal) {
+            // Flexão válida: Descida (cotovelo dobrado < 95º)
+            if (angCotovelo < 95 && estadoMovimento === "SUBIDA") {
+              estadoMovimento = "DESCIDA";
+            }
+            // Flexão válida: Subida completada (braço esticado > 155º)
+            if (angCotovelo > 155 && estadoMovimento === "DESCIDA") {
+              estadoMovimento = "SUBIDA";
+              contarRepeticao(); // Dispara o golpe real
+            }
           }
         }
       }
-      canvasCtx.restore();
+      ctx.restore();
     }
 
     function iniciarCamera() {
-      document.getElementById('start-cam-btn').style.display = 'none';
-      const pose = new Pose({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-      });
-      
-      pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
-      pose.onResults(onResults);
+      document.getElementById('cam-btn').style.display = 'none';
+      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+      pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6 });
+      pose.onResults(processarPose);
 
-      const camera = new Camera(videoElement, {
-        onFrame: async () => { await pose.send({ image: videoElement }); },
+      const cam = new Camera(video, {
+        onFrame: async () => { 
+          canvas.width = video.videoWidth || 400;
+          canvas.height = video.videoHeight || 300;
+          await pose.send({ image: video }); 
+        },
         width: 400, height: 300
       });
-      camera.start();
+      cam.start();
     }
 
-    carregarJogo();
+    atualizarHUD();
   </script>
 </body>
 </html>
