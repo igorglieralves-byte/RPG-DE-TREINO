@@ -46,9 +46,9 @@
     .btn:hover { background: #45a29e; }
     .btn-sec { background: #333; color: #fff; }
 
-    /* Shop Grid */
-    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .shop-item { background: #0b0c10; padding: 8px; border-radius: 8px; text-align: center; border: 1px solid #333; font-size: 12px; }
+    /* Shop Container */
+    .shop-container { margin-top: 10px; }
+    .shop-item { background: #0b0c10; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #333; font-size: 13px; }
 
     .damage-pop { position: absolute; color: #ff4655; font-size: 32px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 30%; }
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
@@ -88,16 +88,12 @@
       <div style="background:#0b0c10; padding:8px; border-radius:8px; font-size:12px; text-align:center;" id="log-txt">Escolha sua classe para iniciar!</div>
       <button class="btn btn-sec" id="next-btn" onclick="proximoBoss()" style="display:none;">PRÓXIMO INIMIGO ⚔️</button>
 
-      <!-- LOJA DE ITENS -->
+      <!-- LOJA DE ITENS (APENAS CURA) -->
       <div style="margin-top: 15px; font-size: 13px; font-weight: bold; color: #66fcf1;">LOJA DE EQUIPAMENTOS</div>
-      <div class="shop-grid">
-        <div class="shop-item">
-          <div>⚔️ +1 Dano Base</div>
-          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 10 Moedas</button>
-        </div>
+      <div class="shop-container">
         <div class="shop-item">
           <div>🧪 Cura +50 HP</div>
-          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('pocao')">🪙 15 Moedas</button>
+          <button class="btn" style="padding:6px; font-size:11px; margin-top:5px;" onclick="comprarPocao()">🪙 15 Moedas</button>
         </div>
       </div>
     </div>
@@ -126,7 +122,6 @@
       </div>
 
       <button class="btn" id="cam-btn" onclick="iniciarCamera()" style="display:none;">🎥 LIGAR CÂMERA DE TREINO</button>
-      <button class="btn btn-sec" onclick="contarRepeticao(true)">+1 REP MANUAL</button>
     </div>
   </div>
 
@@ -147,8 +142,7 @@
     // --- CONFIGURAÇÃO DO JOGADOR ---
     let classe = null;
     let playerHp = 100, playerMaxHp = 100, lvl = 1, xp = 0, maxXp = 100, gold = 0;
-    let danoBase = 1; // FIXADO EM 1 DE DANO CONFORME PEDIDO
-    let danoExtra = 0, multiplicadorXp = 1.0, chanceCritico = 0.1;
+    let multiplicadorXp = 1.0, chanceCritico = 0.1;
     let exercicioAtual = "flexao";
 
     function mudarExercicio(ex) {
@@ -160,7 +154,6 @@
 
     function selecionarClasse(c) {
       classe = c;
-      if (c === 'Guerreiro') { danoExtra = 1; }
       if (c === 'Mago') { multiplicadorXp = 1.5; }
       if (c === 'Ladino') { chanceCritico = 0.35; }
       
@@ -172,13 +165,13 @@
       atualizarHUD();
     }
 
-    // --- BASE DE BOSSES ---
+    // --- BASE DE BOSSES (VIDA AUMENTANDO DE 5 EM 5) ---
     const bosses = [
       { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟" },
-      { name: "ESQUELETO RECRUTA", hp: 30, xp: 50, gold: 15, icon: "💀" },
-      { name: "GOBLIN GUERREIRO", hp: 60, xp: 100, gold: 35, icon: "👺" },
-      { name: "ORC CHEFE", hp: 100, xp: 180, gold: 75, icon: "👹" },
-      { name: "DRAGÃO DE FOGO", hp: 200, xp: 400, gold: 150, icon: "🐉" }
+      { name: "ESQUELETO RECRUTA", hp: 15, xp: 40, gold: 10, icon: "💀" },
+      { name: "GOBLIN GUERREIRO", hp: 20, xp: 70, gold: 20, icon: "👺" },
+      { name: "ORC CHEFE", hp: 25, xp: 110, gold: 35, icon: "👹" },
+      { name: "DRAGÃO DE FOGO", hp: 30, xp: 160, gold: 50, icon: "🐉" }
     ];
 
     let bIndex = 0, bHp = bosses[0].hp, reps = 0, defeated = false;
@@ -204,7 +197,7 @@
           
           if (playerHp <= 0) {
             playerHp = 0;
-            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça mais exercícios para se recuperar!";
+            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça exercícios para se recuperar!";
             setTimeout(resetarBatalha, 2000);
           } else {
             document.getElementById('log-txt').innerText = `⚠️ O Boss te atacou! -${danoBoss} de Vida!`;
@@ -239,12 +232,13 @@
       document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
     }
 
-    function contarRepeticao(manual = false) {
+    function contarRepeticao() {
       if (defeated || playerHp <= 0 || !classe) return;
 
-      let danoTotal = danoBase + danoExtra;
+      // Dano fixado em 1 (com chance de acerto crítico)
+      let danoTotal = 1;
       let eCritico = Math.random() < chanceCritico;
-      if (eCritico) danoTotal *= 2;
+      if (eCritico) danoTotal = 2;
 
       reps++;
       bHp -= danoTotal;
@@ -284,12 +278,10 @@
       atualizarHUD();
     }
 
-    function comprarItem(tipo) {
-      if (tipo === 'espada' && gold >= 10) {
-        gold -= 10; danoExtra += 1;
-        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +1 de Dano.";
-      } else if (tipo === 'pocao' && gold >= 15) {
-        gold -= 15; playerHp = Math.min(playerMaxHp, playerHp + 50);
+    function comprarPocao() {
+      if (gold >= 15) {
+        gold -= 15; 
+        playerHp = Math.min(playerMaxHp, playerHp + 50);
         document.getElementById('log-txt').innerText = "🧪 Poção consumida! +50 de Vida.";
       } else {
         document.getElementById('log-txt').innerText = "🪙 Moedas insuficientes!";
