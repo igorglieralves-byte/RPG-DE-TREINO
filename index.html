@@ -30,7 +30,7 @@
     .boss-title { font-size: 20px; font-weight: 800; color: #ff4655; letter-spacing: 1px; }
     .timer-badge { display: inline-block; background: #ff4655; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
 
-    /* Selector de Exercicio */
+    /* Seletor de Exercício */
     .ex-selector { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; }
     .ex-btn { background: #0b0c10; border: 1px solid #45a29e; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
     .ex-btn.active { background: #66fcf1; color: #0b0c10; font-weight: bold; }
@@ -92,8 +92,8 @@
       <div style="margin-top: 15px; font-size: 13px; font-weight: bold; color: #66fcf1;">LOJA DE EQUIPAMENTOS</div>
       <div class="shop-grid">
         <div class="shop-item">
-          <div>⚔️ +5 Dano Base</div>
-          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 20 Moedas</button>
+          <div>⚔️ +1 Dano Base</div>
+          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 10 Moedas</button>
         </div>
         <div class="shop-item">
           <div>🧪 Cura +50 HP</div>
@@ -147,7 +147,7 @@
     // --- CONFIGURAÇÃO DO JOGADOR ---
     let classe = null;
     let playerHp = 100, playerMaxHp = 100, lvl = 1, xp = 0, maxXp = 100, gold = 0;
-    let danoBase = 20; // DANO BAIXO INICIAL CONFORME PEDIDO
+    let danoBase = 1; // FIXADO EM 1 DE DANO CONFORME PEDIDO
     let danoExtra = 0, multiplicadorXp = 1.0, chanceCritico = 0.1;
     let exercicioAtual = "flexao";
 
@@ -160,7 +160,7 @@
 
     function selecionarClasse(c) {
       classe = c;
-      if (c === 'Guerreiro') { danoExtra = 5; }
+      if (c === 'Guerreiro') { danoExtra = 1; }
       if (c === 'Mago') { multiplicadorXp = 1.5; }
       if (c === 'Ladino') { chanceCritico = 0.35; }
       
@@ -172,12 +172,12 @@
       atualizarHUD();
     }
 
-    // --- REBALANCEAMENTO DOS BOSSES: VIDA REDUZIDA E MOEDAS ESCALÁVEIS ---
+    // --- BASE DE BOSSES ---
     const bosses = [
-      { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟" },       // Ganha pouca moeda
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟" },
       { name: "ESQUELETO RECRUTA", hp: 30, xp: 50, gold: 15, icon: "💀" },
       { name: "GOBLIN GUERREIRO", hp: 60, xp: 100, gold: 35, icon: "👺" },
-      { name: "ORC CHEFE", hp: 100, xp: 180, gold: 75, icon: "👹" },       // Ganha muita moeda na dificuldade alta
+      { name: "ORC CHEFE", hp: 100, xp: 180, gold: 75, icon: "👹" },
       { name: "DRAGÃO DE FOGO", hp: 200, xp: 400, gold: 150, icon: "🐉" }
     ];
 
@@ -285,9 +285,9 @@
     }
 
     function comprarItem(tipo) {
-      if (tipo === 'espada' && gold >= 20) {
-        gold -= 20; danoExtra += 5;
-        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +5 de Dano.";
+      if (tipo === 'espada' && gold >= 10) {
+        gold -= 10; danoExtra += 1;
+        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +1 de Dano.";
       } else if (tipo === 'pocao' && gold >= 15) {
         gold -= 15; playerHp = Math.min(playerMaxHp, playerHp + 50);
         document.getElementById('log-txt').innerText = "🧪 Poção consumida! +50 de Vida.";
@@ -334,7 +334,6 @@
         let joelho = results.poseLandmarks[25];
         let tornozelo = results.poseLandmarks[27];
 
-        // DETECÇÃO POR EXERCÍCIO
         if (exercicioAtual === 'flexao' && ombro && cotovelo && pulso && quadril) {
           let ang = calcAngulo(ombro, cotovelo, pulso);
           let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
