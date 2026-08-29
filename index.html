@@ -63,7 +63,7 @@
       </div>
 
       <div class="boss-container">
-        <img id="boss-img" class="boss-img" src="zumbi.png" alt="Boss">
+        <img id="boss-img" class="boss-img" src="" alt="Boss">
         <div class="boss-name" id="boss-name">...</div>
       </div>
 
@@ -91,14 +91,48 @@
   </div>
 
   <script>
-    // --- LISTA DE BOSSES ---
-    // Coloque os nomes das imagens na sua pasta 'RPG DE TREINO' (ex: esqueleto.png, goblin.png)
+    // --- LISTA DE BOSSES COM IMAGEM LOCAL E RESERVA ONLINE ---
     const bosses = [
-      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 15, img: "zumbi.png" },
-      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 30, img: "esqueleto.png" },
-      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 50, img: "goblin.png" },
-      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 100, img: "orc.png" },
-      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, img: "dragao.png" }
+      { 
+        name: "ZUMBI SOMBRIO", 
+        hp: 10, 
+        xp: 40, 
+        gold: 15, 
+        img: "zumbi.png",
+        fallbackImg: "https://img.icons8.com/isometric/100/zombie.png" 
+      },
+      { 
+        name: "ESQUELETO RECRUTA", 
+        hp: 20, 
+        xp: 70, 
+        gold: 30, 
+        img: "esqueleto.png",
+        fallbackImg: "https://img.icons8.com/isometric/100/skeleton.png" 
+      },
+      { 
+        name: "GOBLIN GUERREIRO", 
+        hp: 35, 
+        xp: 120, 
+        gold: 50, 
+        img: "goblin.png",
+        fallbackImg: "https://img.icons8.com/isometric/100/goblin.png" 
+      },
+      { 
+        name: "ORC CHEFE", 
+        hp: 60, 
+        xp: 200, 
+        gold: 100, 
+        img: "orc.png",
+        fallbackImg: "https://img.icons8.com/isometric/100/orc.png" 
+      },
+      { 
+        name: "DRAGÃO DE FOGO", 
+        hp: 100, 
+        xp: 500, 
+        gold: 300, 
+        img: "dragao.png",
+        fallbackImg: "https://img.icons8.com/isometric/100/dragon.png" 
+      }
     ];
 
     let bIndex = 0, lvl = 1, xp = 0, maxXp = 100, gold = 0;
@@ -107,7 +141,12 @@
     function atualizarHUD() {
       const b = bosses[bIndex];
       document.getElementById('boss-name').innerText = b.name;
-      document.getElementById('boss-img').src = b.img;
+      
+      const imgElem = document.getElementById('boss-img');
+      imgElem.src = b.img;
+      // Caso o arquivo local não seja encontrado, usa a imagem de reserva
+      imgElem.onerror = () => { imgElem.src = b.fallbackImg; };
+
       document.getElementById('boss-hp-bar').style.width = (bHp / b.hp * 100) + '%';
       document.getElementById('boss-hp-txt').innerText = `${bHp} / ${b.hp} HP`;
       document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
@@ -187,7 +226,7 @@
         if (ombro && cotovelo && pulso && quadril) {
           let angCotovelo = calcAngulo(ombro, cotovelo, pulso);
           
-          // Filtro que verifica se você está deitado/em posição de flexão
+          // Filtro que verifica se você está em posição de flexão
           let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
 
           if (corpoHorizontal) {
