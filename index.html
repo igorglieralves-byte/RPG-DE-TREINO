@@ -28,7 +28,7 @@
 
     /* Boss Display */
     .boss-container { text-align: center; margin: 15px 0; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .boss-img { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 70, 85, 0.5)); transition: transform 0.1s; }
+    .boss-img { width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 70, 85, 0.5)); transition: transform 0.1s; }
     .boss-name { font-size: 20px; font-weight: 800; color: #66fcf1; margin-top: 10px; letter-spacing: 1px; }
 
     /* Camera Box */
@@ -63,7 +63,7 @@
       </div>
 
       <div class="boss-container">
-        <img id="boss-img" class="boss-img" src="" alt="Boss">
+        <img id="boss-img" class="boss-img" src="zumbi.png" alt="Boss">
         <div class="boss-name" id="boss-name">...</div>
       </div>
 
@@ -91,13 +91,14 @@
   </div>
 
   <script>
-    // --- LISTA DE BOSSES COM ARTES RPG REALISTAS ---
+    // --- LISTA DE BOSSES ---
+    // Coloque os nomes das imagens na sua pasta 'RPG DE TREINO' (ex: esqueleto.png, goblin.png)
     const bosses = [
-      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 15, img: "https://img.icons8.com/isometric/100/zombie.png" },
-      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 30, img: "https://img.icons8.com/isometric/100/skeleton.png" },
-      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 50, img: "https://img.icons8.com/isometric/100/goblin.png" },
-      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 100, img: "https://img.icons8.com/isometric/100/orc.png" },
-      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, img: "https://img.icons8.com/isometric/100/dragon.png" }
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 15, img: "zumbi.png" },
+      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 30, img: "esqueleto.png" },
+      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 50, img: "goblin.png" },
+      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 100, img: "orc.png" },
+      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, img: "dragao.png" }
     ];
 
     let bIndex = 0, lvl = 1, xp = 0, maxXp = 100, gold = 0;
@@ -155,7 +156,7 @@
       atualizarHUD();
     }
 
-    // --- DETECÇÃO DE VISÃO COMPUTACIONAL COM FILTRO ANTI-BUG E ESQUELETO VISUAL ---
+    // --- DETECÇÃO DE VISÃO COMPUTACIONAL COM ESQUELETO VISUAL E FILTRO ANTI-BUG ---
     let estadoMovimento = "SUBIDA";
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('output_canvas');
@@ -173,11 +174,11 @@
       ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
       if (results.poseLandmarks) {
-        // 1. Desenha as "linhas" do esqueleto na tela
+        // 1. Desenha o esqueleto neon na tela
         drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#66fcf1', lineWidth: 3 });
         drawLandmarks(ctx, results.poseLandmarks, { color: '#ff4655', lineWidth: 2, radius: 4 });
 
-        // 2. Extrai articulações do braço e tronco
+        // 2. Extrai articulações
         let ombro = results.poseLandmarks[11];
         let cotovelo = results.poseLandmarks[13];
         let pulso = results.poseLandmarks[15];
@@ -186,18 +187,18 @@
         if (ombro && cotovelo && pulso && quadril) {
           let angCotovelo = calcAngulo(ombro, cotovelo, pulso);
           
-          // FILTRO ANTI-BUG: Valida se o ombro e o quadril estão no mesmo plano horizontal (posição de prancha/flexão)
+          // Filtro que verifica se você está deitado/em posição de flexão
           let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
 
           if (corpoHorizontal) {
-            // Flexão válida: Descida (cotovelo dobrado < 95º)
+            // Descida da flexão (cotovelo dobrado < 95º)
             if (angCotovelo < 95 && estadoMovimento === "SUBIDA") {
               estadoMovimento = "DESCIDA";
             }
-            // Flexão válida: Subida completada (braço esticado > 155º)
+            // Subida completada (braço esticado > 155º)
             if (angCotovelo > 155 && estadoMovimento === "DESCIDA") {
               estadoMovimento = "SUBIDA";
-              contarRepeticao(); // Dispara o golpe real
+              contarRepeticao(); // Dá o dano real
             }
           }
         }
