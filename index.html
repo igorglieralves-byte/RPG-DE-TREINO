@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Quest - Fitness RPG AI Pro</title>
+  <title>FitQuest RPG - Complete Edition</title>
   
-  <!-- MediaPipe & Drawing Utils -->
+  <!-- MediaPipe Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -13,70 +13,94 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
     body { background-color: #0b0c10; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-    
     .game-container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 950px; width: 100%; justify-content: center; }
 
-    /* Card RPG */
-    .card { background: #1f2833; width: 420px; border-radius: 16px; padding: 20px; border: 1px solid #45a29e; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
+    .card { background: #1f2833; width: 440px; border-radius: 16px; padding: 20px; border: 1px solid #45a29e; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
 
-    /* Player HUD */
-    .hud { display: flex; align-items: center; background: #0b0c10; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
-    .level { background: #66fcf1; color: #0b0c10; font-weight: 900; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    /* HUD Player */
+    .hud { display: flex; align-items: center; background: #0b0c10; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
+    .level { background: #66fcf1; color: #0b0c10; font-weight: 900; width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     .hud-info { flex: 1; margin: 0 12px; }
-    .bar { background: #1f2833; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
-    .bar-fill { height: 100%; width: 0%; transition: width 0.3s; }
+    .bar { background: #0b0c10; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 4px; border: 1px solid #333; }
+    .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
 
-    /* Boss Display */
-    .boss-container { text-align: center; margin: 15px 0; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .boss-img { width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 70, 85, 0.5)); transition: transform 0.1s; }
-    .boss-name { font-size: 20px; font-weight: 800; color: #66fcf1; margin-top: 10px; letter-spacing: 1px; }
+    /* Boss Visual Frame */
+    .boss-box { text-align: center; margin: 15px 0; background: #0b0c10; border-radius: 12px; padding: 15px; border: 1px dashed #45a29e; }
+    .boss-avatar { font-size: 64px; line-height: 1; margin-bottom: 5px; }
+    .boss-title { font-size: 20px; font-weight: 800; color: #ff4655; letter-spacing: 1px; }
+    .timer-badge { display: inline-block; background: #ff4655; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
 
-    /* Camera Box */
-    .video-container { position: relative; width: 100%; height: 280px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
+    /* Video Canvas */
+    .video-container { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
     video { display: none; }
     canvas { width: 100%; height: 100%; object-fit: cover; }
 
-    .counter { font-size: 46px; font-weight: 900; text-align: center; margin: 10px 0; font-family: monospace; color: #66fcf1; }
+    .counter { font-size: 40px; font-weight: 900; text-align: center; margin: 8px 0; font-family: monospace; color: #66fcf1; }
     
-    .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+    .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 6px; }
     .btn:hover { background: #45a29e; }
-    .btn-sec { background: #333; color: #fff; margin-top: 8px; }
+    .btn-sec { background: #333; color: #fff; }
+    .btn-danger { background: #ff4655; color: #fff; }
 
-    .damage-pop { position: absolute; color: #ff4655; font-size: 36px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 40%; }
-    @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -60px); } }
+    /* Shop Grid */
+    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .shop-item { background: #0b0c10; padding: 8px; border-radius: 8px; text-align: center; border: 1px solid #333; font-size: 12px; }
+
+    .damage-pop { position: absolute; color: #ff4655; font-size: 32px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 30%; }
+    @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
   </style>
 </head>
 <body>
 
   <div class="game-container">
-    <!-- TELA DE JOGO / BATALHA -->
+    <!-- TELA PRINCIPAL DO RPG -->
     <div class="card">
+      <!-- HUD JOGADOR -->
       <div class="hud">
         <div class="level" id="player-lvl">1</div>
         <div class="hud-info">
           <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
-            <span>GUERREIRO</span>
+            <span id="player-class-title">GUERREIRO</span>
             <span id="gold-cnt">🪙 0</span>
           </div>
-          <div class="bar"><div class="bar-fill" id="xp-bar" style="background:#66fcf1;"></div></div>
+          <!-- Vida -->
+          <div class="bar"><div class="bar-fill" id="player-hp-bar" style="background:#ff4655;"></div></div>
+          <!-- XP -->
+          <div class="bar"><div class="bar-fill" id="player-xp-bar" style="background:#66fcf1; width:0%;"></div></div>
         </div>
       </div>
 
-      <div class="boss-container">
-        <img id="boss-img" class="boss-img" src="" alt="Boss">
-        <div class="boss-name" id="boss-name">...</div>
+      <!-- PAINEL DO BOSS -->
+      <div class="boss-box">
+        <div class="boss-avatar" id="boss-icon">👾</div>
+        <div class="boss-title" id="boss-name">...</div>
+        <div class="timer-badge">ATAQUE EM: <span id="timer-txt">10</span>s</div>
       </div>
 
-      <div class="bar" style="height:16px; background:rgba(255,70,85,0.2);"><div class="bar-fill" id="boss-hp-bar" style="background:#ff4655; width:100%;"></div></div>
-      <div style="text-align:center; font-size:13px; color:#aaa; margin:5px 0 15px 0;" id="boss-hp-txt">0/0 HP</div>
+      <!-- BARRA DE VIDA DO BOSS -->
+      <div class="bar" style="height:16px;"><div class="bar-fill" id="boss-hp-bar" style="background:#ff4655;"></div></div>
+      <div style="text-align:center; font-size:12px; color:#aaa; margin:4px 0 10px 0;" id="boss-hp-txt">0/0 HP</div>
 
-      <div style="background:#0b0c10; padding:10px; border-radius:8px; font-size:13px; text-align:center;" id="log-txt">Fique em posição de flexão em frente à câmera.</div>
+      <div style="background:#0b0c10; padding:8px; border-radius:8px; font-size:12px; text-align:center;" id="log-txt">Escolha sua classe para iniciar!</div>
       <button class="btn btn-sec" id="next-btn" onclick="proximoBoss()" style="display:none;">PRÓXIMO INIMIGO ⚔️</button>
+
+      <!-- LOJA DE ITENS -->
+      <div style="margin-top: 15px; font-size: 13px; font-weight: bold; color: #66fcf1;">LOJA DE EQUIPAMENTOS</div>
+      <div class="shop-grid">
+        <div class="shop-item">
+          <div>⚔️ +1 Dano Base</div>
+          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('espada')">🪙 50 Moedas</button>
+        </div>
+        <div class="shop-item">
+          <div>🧪 Cura +50 HP</div>
+          <button class="btn" style="padding:6px; font-size:11px;" onclick="comprarItem('pocao')">🪙 30 Moedas</button>
+        </div>
+      </div>
     </div>
 
-    <!-- TELA DE CÂMERA E IA -->
+    <!-- TELA DE CÂMERA E CONTROLES -->
     <div class="card">
-      <div style="text-align:center; font-weight:bold; margin-bottom:10px; color:#66fcf1;">DETECÇÃO DE EXERCÍCIO COM IA</div>
+      <div style="text-align:center; font-weight:bold; margin-bottom:8px; color:#66fcf1;">VISÃO COMPUTACIONAL IA</div>
       
       <div class="video-container">
         <video id="webcam" playsinline></video>
@@ -85,117 +109,189 @@
 
       <div class="counter" id="rep-cnt">0 / 0</div>
       
-      <button class="btn" id="cam-btn" onclick="iniciarCamera()">🎥 LIGAR CÂMERA DE TREINO</button>
+      <!-- SELEÇÃO DE CLASSE -->
+      <div id="class-select" style="display:flex; gap:5px; margin-bottom:8px;">
+        <button class="btn" onclick="selecionarClasse('Guerreiro')">🛡️ Guerreiro</button>
+        <button class="btn" onclick="selecionarClasse('Mago')">🔮 Mago</button>
+        <button class="btn" onclick="selecionarClasse('Ladino')">🗡️ Ladino</button>
+      </div>
+
+      <button class="btn" id="cam-btn" onclick="iniciarCamera()" style="display:none;">🎥 LIGAR CÂMERA DE TREINO</button>
       <button class="btn btn-sec" onclick="contarRepeticao(true)">+1 REP MANUAL</button>
     </div>
   </div>
 
   <script>
-    // --- LISTA DE BOSSES COM IMAGEM LOCAL E RESERVA ONLINE ---
+    // --- AUDIO SINTETIZADO (SEM ARQUIVOS EXTERNOS) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function tocarSom(freq, tipo, duracao) {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = tipo; osc.frequency.value = freq;
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duracao);
+        osc.stop(audioCtx.currentTime + duracao);
+      } catch(e) {}
+    }
+
+    // --- CONFIGURAÇÃO DE CLASSES E JOGADOR ---
+    let classe = null;
+    let playerHp = 100, playerMaxHp = 100, lvl = 1, xp = 0, maxXp = 100, gold = 0;
+    let danoExtra = 0, multiplicadorXp = 1.0, chanceCritico = 0.1;
+
+    function selecionarClasse(c) {
+      classe = c;
+      if (c === 'Guerreiro') { danoExtra = 1; }
+      if (c === 'Mago') { multiplicadorXp = 1.5; }
+      if (c === 'Ladino') { chanceCritico = 0.35; }
+      
+      document.getElementById('player-class-title').innerText = c.toUpperCase();
+      document.getElementById('class-select').style.display = 'none';
+      document.getElementById('cam-btn').style.display = 'block';
+      document.getElementById('log-txt').innerText = `Classe ${c} escolhida! Ligue a câmera para começar.`;
+      iniciarTemporizador();
+      atualizarHUD();
+    }
+
+    // --- BASE DE BOSSES ---
     const bosses = [
-      { 
-        name: "ZUMBI SOMBRIO", 
-        hp: 10, 
-        xp: 40, 
-        gold: 15, 
-        img: "zumbi.png",
-        fallbackImg: "https://img.icons8.com/isometric/100/zombie.png" 
-      },
-      { 
-        name: "ESQUELETO RECRUTA", 
-        hp: 20, 
-        xp: 70, 
-        gold: 30, 
-        img: "esqueleto.png",
-        fallbackImg: "https://img.icons8.com/isometric/100/skeleton.png" 
-      },
-      { 
-        name: "GOBLIN GUERREIRO", 
-        hp: 35, 
-        xp: 120, 
-        gold: 50, 
-        img: "goblin.png",
-        fallbackImg: "https://img.icons8.com/isometric/100/goblin.png" 
-      },
-      { 
-        name: "ORC CHEFE", 
-        hp: 60, 
-        xp: 200, 
-        gold: 100, 
-        img: "orc.png",
-        fallbackImg: "https://img.icons8.com/isometric/100/orc.png" 
-      },
-      { 
-        name: "DRAGÃO DE FOGO", 
-        hp: 100, 
-        xp: 500, 
-        gold: 300, 
-        img: "dragao.png",
-        fallbackImg: "https://img.icons8.com/isometric/100/dragon.png" 
-      }
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 40, gold: 20, icon: "🧟" },
+      { name: "ESQUELETO RECRUTA", hp: 20, xp: 70, gold: 40, icon: "💀" },
+      { name: "GOBLIN GUERREIRO", hp: 35, xp: 120, gold: 60, icon: "👺" },
+      { name: "ORC CHEFE", hp: 60, xp: 200, gold: 120, icon: "👹" },
+      { name: "DRAGÃO DE FOGO", hp: 100, xp: 500, gold: 300, icon: "🐉" }
     ];
 
-    let bIndex = 0, lvl = 1, xp = 0, maxXp = 100, gold = 0;
-    let bHp = bosses[0].hp, reps = 0, defeated = false;
+    let bIndex = 0, bHp = bosses[0].hp, reps = 0, defeated = false;
+    let tempoMaxAtaque = 10; // Começa com 10 segundos
+    let tempoRestante = 10;
+    let timerInterval = null;
+
+    function iniciarTemporizador() {
+      clearInterval(timerInterval);
+      tempoRestante = tempoMaxAtaque;
+      document.getElementById('timer-txt').innerText = tempoRestante;
+
+      timerInterval = setInterval(() => {
+        if (defeated || playerHp <= 0 || !classe) return;
+        tempoRestante--;
+        document.getElementById('timer-txt').innerText = tempoRestante;
+
+        if (tempoRestante <= 0) {
+          // Boss ataca o jogador
+          let danoBoss = 10 + (bIndex * 5);
+          playerHp -= danoBoss;
+          tocarSom(150, 'sawtooth', 0.3); // Som de dano levado
+          mostrarPopUp(`-${danoBoss} HP`, true);
+          
+          if (playerHp <= 0) {
+            playerHp = 0;
+            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça mais flexões para se recuperar!";
+            setTimeout(resetarBatalha, 2000);
+          } else {
+            document.getElementById('log-txt').innerText = `⚠️ O Boss te atacou! -${danoBoss} de Vida!`;
+          }
+          tempoRestante = tempoMaxAtaque;
+          atualizarHUD();
+        }
+      }, 1000);
+    }
+
+    function resetarBatalha() {
+      playerHp = playerMaxHp;
+      bHp = bosses[bIndex].hp;
+      reps = 0;
+      defeated = false;
+      document.getElementById('log-txt').innerText = "Batalha reiniciada. Em guarda!";
+      iniciarTemporizador();
+      atualizarHUD();
+    }
 
     function atualizarHUD() {
       const b = bosses[bIndex];
       document.getElementById('boss-name').innerText = b.name;
+      document.getElementById('boss-icon').innerText = b.icon;
+      document.getElementById('boss-hp-bar').style.width = Math.max(0, (bHp / b.hp * 100)) + '%';
+      document.getElementById('boss-hp-txt').innerText = `${Math.max(0, bHp)} / ${b.hp} HP`;
       
-      const imgElem = document.getElementById('boss-img');
-      imgElem.src = b.img;
-      // Caso o arquivo local não seja encontrado, usa a imagem de reserva
-      imgElem.onerror = () => { imgElem.src = b.fallbackImg; };
-
-      document.getElementById('boss-hp-bar').style.width = (bHp / b.hp * 100) + '%';
-      document.getElementById('boss-hp-txt').innerText = `${bHp} / ${b.hp} HP`;
-      document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
+      document.getElementById('player-hp-bar').style.width = Math.max(0, (playerHp / playerMaxHp * 100)) + '%';
       document.getElementById('player-lvl').innerText = lvl;
-      document.getElementById('xp-bar').style.width = (xp / maxXp * 100) + '%';
+      document.getElementById('player-xp-bar').style.width = (xp / maxXp * 100) + '%';
       document.getElementById('gold-cnt').innerText = `🪙 ${gold}`;
+      document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
     }
 
     function contarRepeticao(manual = false) {
-      if (defeated) return;
-      reps++;
-      bHp--;
-      
-      // Animação de dano no Boss
-      const img = document.getElementById('boss-img');
-      img.style.transform = 'scale(1.2) rotate(5deg)';
-      setTimeout(() => img.style.transform = 'scale(1)', 100);
+      if (defeated || playerHp <= 0 || !classe) return;
 
-      mostrarPopUp("-1 HP");
+      // Cálculo de Dano e Crítico
+      let danoTotal = 1 + danoExtra;
+      let eCritico = Math.random() < chanceCritico;
+      if (eCritico) danoTotal *= 2;
+
+      reps++;
+      bHp -= danoTotal;
+      tempoRestante = tempoMaxAtaque; // Reseta o tempo de ataque do boss ao acertar um golpe
+      document.getElementById('timer-txt').innerText = tempoRestante;
+
+      tocarSom(eCritico ? 800 : 400, 'sine', 0.15); // Som de ataque
+      mostrarPopUp(eCritico ? `💥 CRÍTICO! -${danoTotal}` : `-${danoTotal} HP`);
 
       if (bHp <= 0) {
         bHp = 0;
         defeated = true;
+        clearInterval(timerInterval);
+        
+        let xpGanha = Math.floor(bosses[bIndex].xp * multiplicadorXp);
         gold += bosses[bIndex].gold;
-        xp += bosses[bIndex].xp;
-        if (xp >= maxXp) { lvl++; xp -= maxXp; maxXp = Math.floor(maxXp * 1.5); }
-        document.getElementById('log-txt').innerText = `🏆 INIMIGO DERROTADO! +${bosses[bIndex].xp} XP / +${bosses[bIndex].gold} Moedas!`;
+        xp += xpGanha;
+
+        if (xp >= maxXp) { lvl++; xp -= maxXp; maxXp = Math.floor(maxXp * 1.5); playerMaxHp += 20; playerHp = playerMaxHp; }
+        
+        tocarSom(600, 'triangle', 0.5); // Som de vitória
+        document.getElementById('log-txt').innerText = `🏆 DERROTADO! +${xpGanha} XP / +${bosses[bIndex].gold} Moedas!`;
         document.getElementById('next-btn').style.display = 'block';
       }
       atualizarHUD();
     }
 
-    function mostrarPopUp(txt) {
+    function proximoBoss() {
+      if (bIndex < bosses.length - 1) {
+        bIndex++;
+        // REGRA DE SEGUNDOS: Diminui 1s por inimigo derrotado (mínimo de 3s)
+        tempoMaxAtaque = Math.max(3, 10 - bIndex);
+      }
+      bHp = bosses[bIndex].hp; reps = 0; defeated = false;
+      document.getElementById('next-btn').style.display = 'none';
+      document.getElementById('log-txt').innerText = `Novo Boss! Você tem ${tempoMaxAtaque}s por ataque!`;
+      iniciarTemporizador();
+      atualizarHUD();
+    }
+
+    function comprarItem(tipo) {
+      if (tipo === 'espada' && gold >= 50) {
+        gold -= 50; danoExtra++;
+        document.getElementById('log-txt').innerText = "⚔️ Espada comprada! +1 de Dano Base.";
+      } else if (tipo === 'pocao' && gold >= 30) {
+        gold -= 30; playerHp = Math.min(playerMaxHp, playerHp + 50);
+        document.getElementById('log-txt').innerText = "🧪 Poção consumida! +50 de Vida.";
+      } else {
+        document.getElementById('log-txt').innerText = "🪙 Moedas insuficientes!";
+      }
+      atualizarHUD();
+    }
+
+    function mostrarPopUp(txt, isDamageToPlayer = false) {
       const p = document.createElement('div');
       p.className = 'damage-pop';
       p.innerText = txt;
+      if (isDamageToPlayer) p.style.color = '#ff4655';
       document.querySelector('.card').appendChild(p);
       setTimeout(() => p.remove(), 600);
     }
 
-    function proximoBoss() {
-      if (bIndex < bosses.length - 1) bIndex++;
-      bHp = bosses[bIndex].hp; reps = 0; defeated = false;
-      document.getElementById('next-btn').style.display = 'none';
-      document.getElementById('log-txt').innerText = "Em combate!";
-      atualizarHUD();
-    }
-
-    // --- DETECÇÃO DE VISÃO COMPUTACIONAL COM ESQUELETO VISUAL E FILTRO ANTI-BUG ---
+    // --- MEDIAPIPE AI LOGIC ---
     let estadoMovimento = "SUBIDA";
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('output_canvas');
@@ -213,11 +309,9 @@
       ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
       if (results.poseLandmarks) {
-        // 1. Desenha o esqueleto neon na tela
         drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#66fcf1', lineWidth: 3 });
         drawLandmarks(ctx, results.poseLandmarks, { color: '#ff4655', lineWidth: 2, radius: 4 });
 
-        // 2. Extrai articulações
         let ombro = results.poseLandmarks[11];
         let cotovelo = results.poseLandmarks[13];
         let pulso = results.poseLandmarks[15];
@@ -225,19 +319,13 @@
 
         if (ombro && cotovelo && pulso && quadril) {
           let angCotovelo = calcAngulo(ombro, cotovelo, pulso);
-          
-          // Filtro que verifica se você está em posição de flexão
           let corpoHorizontal = Math.abs(ombro.y - quadril.y) < 0.25;
 
           if (corpoHorizontal) {
-            // Descida da flexão (cotovelo dobrado < 95º)
-            if (angCotovelo < 95 && estadoMovimento === "SUBIDA") {
-              estadoMovimento = "DESCIDA";
-            }
-            // Subida completada (braço esticado > 155º)
+            if (angCotovelo < 95 && estadoMovimento === "SUBIDA") { estadoMovimento = "DESCIDA"; }
             if (angCotovelo > 155 && estadoMovimento === "DESCIDA") {
               estadoMovimento = "SUBIDA";
-              contarRepeticao(); // Dá o dano real
+              contarRepeticao();
             }
           }
         }
@@ -261,8 +349,6 @@
       });
       cam.start();
     }
-
-    atualizarHUD();
   </script>
 </body>
 </html>
