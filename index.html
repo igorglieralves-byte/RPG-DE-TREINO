@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitQuest RPG - Complete Edition</title>
+  <title>FitQuest RPG - Ultra Edition</title>
   
   <!-- MediaPipe Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -17,6 +17,16 @@
 
     .card { background: #1f2833; width: 440px; border-radius: 16px; padding: 20px; border: 1px solid #45a29e; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
 
+    /* Efeito de Tremor da Tela */
+    .shake { animation: shakeAnim 0.3s ease-in-out; }
+    @keyframes shakeAnim {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-8px, 5px); }
+      40% { transform: translate(8px, -5px); }
+      60% { transform: translate(-5px, -5px); }
+      80% { transform: translate(5px, 5px); }
+    }
+
     /* HUD Player */
     .hud { display: flex; align-items: center; background: #0b0c10; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
     .level { background: #66fcf1; color: #0b0c10; font-weight: 900; width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -25,10 +35,11 @@
     .bar-fill { height: 100%; width: 100%; transition: width 0.3s; }
 
     /* Boss Visual Frame */
-    .boss-box { text-align: center; margin: 15px 0; background: #0b0c10; border-radius: 12px; padding: 15px; border: 1px dashed #45a29e; }
-    .boss-avatar { font-size: 64px; line-height: 1; margin-bottom: 5px; }
-    .boss-title { font-size: 20px; font-weight: 800; color: #ff4655; letter-spacing: 1px; }
-    .timer-badge { display: inline-block; background: #ff4655; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
+    .boss-box { text-align: center; margin: 10px 0; background: #0b0c10; border-radius: 12px; padding: 12px; border: 1px dashed #45a29e; }
+    .boss-avatar { font-size: 56px; line-height: 1; margin-bottom: 5px; }
+    .boss-title { font-size: 18px; font-weight: 800; color: #ff4655; letter-spacing: 1px; }
+    .boss-rule { font-size: 11px; color: #f1c40f; font-weight: bold; margin-top: 2px; }
+    .timer-badge { display: inline-block; background: #ff4655; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; margin-top: 5px; }
 
     /* Seletor de Exercício */
     .ex-selector { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; }
@@ -36,27 +47,29 @@
     .ex-btn.active { background: #66fcf1; color: #0b0c10; font-weight: bold; }
 
     /* Video Canvas */
-    .video-container { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
+    .video-container { position: relative; width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #45a29e; }
     video { display: none; }
     canvas { width: 100%; height: 100%; object-fit: cover; }
 
-    .counter { font-size: 40px; font-weight: 900; text-align: center; margin: 8px 0; font-family: monospace; color: #66fcf1; }
+    .counter { font-size: 36px; font-weight: 900; text-align: center; margin: 6px 0; font-family: monospace; color: #66fcf1; }
     
-    .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 6px; }
+    .btn { background: #66fcf1; color: #0b0c10; border: none; width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 6px; }
     .btn:hover { background: #45a29e; }
     .btn-sec { background: #333; color: #fff; }
+    .btn-special { background: #e74c3c; color: #fff; display: none; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { 0% { transform: scale(0.98); } 100% { transform: scale(1.02); } }
 
-    /* Shop Container */
-    .shop-container { margin-top: 10px; }
-    .shop-item { background: #0b0c10; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #333; font-size: 13px; }
+    /* Loja e Itens */
+    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .shop-item { background: #0b0c10; padding: 8px; border-radius: 8px; text-align: center; border: 1px solid #333; font-size: 11px; }
 
-    .damage-pop { position: absolute; color: #ff4655; font-size: 32px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 30%; }
+    .damage-pop { position: absolute; color: #ff4655; font-size: 32px; font-weight: 900; pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 30%; z-index: 10; }
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
   </style>
 </head>
 <body>
 
-  <div class="game-container">
+  <div class="game-container" id="game-window">
     <!-- TELA PRINCIPAL DO RPG -->
     <div class="card">
       <!-- HUD JOGADOR -->
@@ -78,22 +91,31 @@
       <div class="boss-box">
         <div class="boss-avatar" id="boss-icon">🧟</div>
         <div class="boss-title" id="boss-name">...</div>
+        <div class="boss-rule" id="boss-rule-txt">Sem restrições</div>
         <div class="timer-badge">ATAQUE EM: <span id="timer-txt">10</span>s</div>
       </div>
 
       <!-- BARRA DE VIDA DO BOSS -->
       <div class="bar" style="height:16px;"><div class="bar-fill" id="boss-hp-bar" style="background:#ff4655;"></div></div>
-      <div style="text-align:center; font-size:12px; color:#aaa; margin:4px 0 10px 0;" id="boss-hp-txt">0/0 HP</div>
+      <div style="text-align:center; font-size:12px; color:#aaa; margin:4px 0 8px 0;" id="boss-hp-txt">0/0 HP</div>
 
       <div style="background:#0b0c10; padding:8px; border-radius:8px; font-size:12px; text-align:center;" id="log-txt">Escolha sua classe para iniciar!</div>
       <button class="btn btn-sec" id="next-btn" onclick="proximoBoss()" style="display:none;">PRÓXIMO INIMIGO ⚔️</button>
 
-      <!-- LOJA DE ITENS (APENAS CURA) -->
-      <div style="margin-top: 15px; font-size: 13px; font-weight: bold; color: #66fcf1;">LOJA DE EQUIPAMENTOS</div>
-      <div class="shop-container">
+      <!-- LOJA DE ITENS -->
+      <div style="margin-top: 10px; font-size: 12px; font-weight: bold; color: #66fcf1;">LOJA & AURAS</div>
+      <div class="shop-grid">
         <div class="shop-item">
           <div>🧪 Cura +50 HP</div>
-          <button class="btn" style="padding:6px; font-size:11px; margin-top:5px;" onclick="comprarPocao()">🪙 15 Moedas</button>
+          <button class="btn" style="padding:4px; font-size:10px; margin-top:4px;" onclick="comprarPocao()">🪙 15 Moedas</button>
+        </div>
+        <div class="shop-item">
+          <div>🔥 Aura de Fogo</div>
+          <button class="btn" style="padding:4px; font-size:10px; margin-top:4px;" onclick="comprarAura('#ff4655', 20)">🪙 20 Moedas</button>
+        </div>
+        <div class="shop-item" style="grid-column: span 2;">
+          <div>⚡ Aura de Raio Dourado</div>
+          <button class="btn" style="padding:4px; font-size:10px; margin-top:4px;" onclick="comprarAura('#f1c40f', 35)">🪙 35 Moedas</button>
         </div>
       </div>
     </div>
@@ -114,6 +136,9 @@
 
       <div class="counter" id="rep-cnt">0 / 0</div>
       
+      <!-- BOTÃO DE ATAQUE ESPECIAL -->
+      <button class="btn btn-special" id="special-btn" onclick="usarEspecial()">🔥 USAR ESPECIAL (5 DANO) 🔥</button>
+
       <!-- SELEÇÃO DE CLASSE -->
       <div id="class-select" style="display:flex; gap:5px; margin-bottom:8px;">
         <button class="btn" onclick="selecionarClasse('Guerreiro')">🛡️ Guerreiro</button>
@@ -126,7 +151,7 @@
   </div>
 
   <script>
-    // --- AUDIO SINTETIZADO ---
+    // --- AUDIO & SINTETIZADOR DE VOZ ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function tocarSom(freq, tipo, duracao) {
       try {
@@ -139,17 +164,37 @@
       } catch(e) {}
     }
 
+    function falar(texto) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(texto);
+        msg.lang = 'pt-BR';
+        msg.rate = 1.1;
+        window.speechSynthesis.speak(msg);
+      }
+    }
+
+    function tremerTela() {
+      const el = document.getElementById('game-window');
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+
     // --- CONFIGURAÇÃO DO JOGADOR ---
     let classe = null;
     let playerHp = 100, playerMaxHp = 100, lvl = 1, xp = 0, maxXp = 100, gold = 0;
     let multiplicadorXp = 1.0, chanceCritico = 0.1;
     let exercicioAtual = "flexao";
+    let cargasEspecial = 0;
+    let totalRepsSessao = 0;
+    let corAura = '#66fcf1'; // Cor padrão das linhas
 
     function mudarExercicio(ex) {
       exercicioAtual = ex;
       document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(`btn-${ex}`).classList.add('active');
-      document.getElementById('log-txt').innerText = `Exercício alterado para: ${ex.toUpperCase()}`;
+      document.getElementById('log-txt').innerText = `Exercício: ${ex.toUpperCase()}`;
     }
 
     function selecionarClasse(c) {
@@ -160,18 +205,19 @@
       document.getElementById('player-class-title').innerText = c.toUpperCase();
       document.getElementById('class-select').style.display = 'none';
       document.getElementById('cam-btn').style.display = 'block';
-      document.getElementById('log-txt').innerText = `Classe ${c} escolhida! Ligue a câmera para começar.`;
+      document.getElementById('log-txt').innerText = `Classe ${c} pronta! Ligue a câmera.`;
+      falar(`Classe ${c} selecionada. Prepare-se!`);
       iniciarTemporizador();
       atualizarHUD();
     }
 
-    // --- BASE DE BOSSES (VIDA AUMENTANDO DE 5 EM 5) ---
+    // --- BASE DE BOSSES ---
     const bosses = [
-      { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟" },
-      { name: "ESQUELETO RECRUTA", hp: 15, xp: 40, gold: 10, icon: "💀" },
-      { name: "GOBLIN GUERREIRO", hp: 20, xp: 70, gold: 20, icon: "👺" },
-      { name: "ORC CHEFE", hp: 25, xp: 110, gold: 35, icon: "👹" },
-      { name: "DRAGÃO DE FOGO", hp: 30, xp: 160, gold: 50, icon: "🐉" }
+      { name: "ZUMBI SOMBRIO", hp: 10, xp: 20, gold: 5, icon: "🧟", rule: "Sem restrições", req: null },
+      { name: "ESQUELETO RECRUTA", hp: 15, xp: 40, gold: 10, icon: "💀", rule: "Sem restrições", req: null },
+      { name: "GOBLIN GUERREIRO", hp: 20, xp: 70, gold: 20, icon: "👺", rule: "⚠️ Só toma dano de Agachamento!", req: "agachamento" },
+      { name: "ORC CHEFE", hp: 25, xp: 110, gold: 35, icon: "👹", rule: "Sem restrições", req: null },
+      { name: "DRAGÃO DE FOGO", hp: 30, xp: 160, gold: 50, icon: "🐉", rule: "⚠️ Imune a Polichinelo!", block: "polichinelo" }
     ];
 
     let bIndex = 0, bHp = bosses[0].hp, reps = 0, defeated = false;
@@ -193,14 +239,17 @@
           let danoBoss = 10 + (bIndex * 5);
           playerHp -= danoBoss;
           tocarSom(150, 'sawtooth', 0.3);
+          tremerTela();
           mostrarPopUp(`-${danoBoss} HP`, true);
           
           if (playerHp <= 0) {
             playerHp = 0;
-            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO! Faça exercícios para se recuperar!";
+            document.getElementById('log-txt').innerText = "💀 VOCÊ FOI DERROTADO!";
+            falar("Você foi derrotado!");
             setTimeout(resetarBatalha, 2000);
           } else {
-            document.getElementById('log-txt').innerText = `⚠️ O Boss te atacou! -${danoBoss} de Vida!`;
+            document.getElementById('log-txt').innerText = `⚠️ O Boss te atacou! -${danoBoss} HP!`;
+            falar("Ataque do boss!");
           }
           tempoRestante = tempoMaxAtaque;
           atualizarHUD();
@@ -213,7 +262,7 @@
       bHp = bosses[bIndex].hp;
       reps = 0;
       defeated = false;
-      document.getElementById('log-txt').innerText = "Batalha reiniciada. Em guarda!";
+      document.getElementById('log-txt').innerText = "Batalha reiniciada!";
       iniciarTemporizador();
       atualizarHUD();
     }
@@ -222,6 +271,7 @@
       const b = bosses[bIndex];
       document.getElementById('boss-name').innerText = b.name;
       document.getElementById('boss-icon').innerText = b.icon;
+      document.getElementById('boss-rule-txt').innerText = b.rule;
       document.getElementById('boss-hp-bar').style.width = Math.max(0, (bHp / b.hp * 100)) + '%';
       document.getElementById('boss-hp-txt').innerText = `${Math.max(0, bHp)} / ${b.hp} HP`;
       
@@ -230,21 +280,56 @@
       document.getElementById('player-xp-bar').style.width = (xp / maxXp * 100) + '%';
       document.getElementById('gold-cnt').innerText = `🪙 ${gold}`;
       document.getElementById('rep-cnt').innerText = `${reps} / ${b.hp}`;
+
+      // Botão Especial
+      const spBtn = document.getElementById('special-btn');
+      if (cargasEspecial > 0) {
+        spBtn.style.display = 'block';
+        spBtn.innerText = `🔥 USAR ESPECIAL (${cargasEspecial}x)`;
+      } else {
+        spBtn.style.display = 'none';
+      }
+    }
+
+    function checarConquistas() {
+      if (totalRepsSessao === 10) falar("Conquista! Dez repetições concluídas!");
+      if (totalRepsSessao === 25) falar("Conquista! Vinte e cinco repetições! Você é uma máquina!");
+      if (totalRepsSessao === 50) falar("Incrível! Cinquenta repetições atingidas!");
     }
 
     function contarRepeticao() {
       if (defeated || playerHp <= 0 || !classe) return;
 
-      // Dano fixado em 1 (com chance de acerto crítico)
+      const currentBoss = bosses[bIndex];
+      if (currentBoss.req && exercicioAtual !== currentBoss.req) {
+        document.getElementById('log-txt').innerText = `❌ Inimigo imune a esse exercício! Use ${currentBoss.req.toUpperCase()}!`;
+        tocarSom(100, 'square', 0.2);
+        return;
+      }
+      if (currentBoss.block && exercicioAtual === currentBoss.block) {
+        document.getElementById('log-txt').innerText = `❌ Inimigo imune a ${currentBoss.block.toUpperCase()}!`;
+        tocarSom(100, 'square', 0.2);
+        return;
+      }
+
       let danoTotal = 1;
       let eCritico = Math.random() < chanceCritico;
       if (eCritico) danoTotal = 2;
 
       reps++;
+      totalRepsSessao++;
+      checarConquistas();
+
+      if (totalRepsSessao % 10 === 0) {
+        cargasEspecial++;
+        falar("Ataque especial carregado!");
+      }
+
       bHp -= danoTotal;
       tempoRestante = tempoMaxAtaque; 
       document.getElementById('timer-txt').innerText = tempoRestante;
 
+      if (eCritico) tremerTela();
       tocarSom(eCritico ? 800 : 400, 'sine', 0.15);
       mostrarPopUp(eCritico ? `💥 CRÍTICO! -${danoTotal}` : `-${danoTotal} HP`);
 
@@ -261,6 +346,27 @@
         
         tocarSom(600, 'triangle', 0.5);
         document.getElementById('log-txt').innerText = `🏆 DERROTADO! +${xpGanha} XP / +${bosses[bIndex].gold} Moedas!`;
+        falar("Inimigo derrotado! Excelente trabalho!");
+        document.getElementById('next-btn').style.display = 'block';
+      }
+      atualizarHUD();
+    }
+
+    function usarEspecial() {
+      if (cargasEspecial <= 0 || defeated || playerHp <= 0) return;
+      cargasEspecial--;
+      bHp -= 5;
+      tremerTela();
+      tocarSom(900, 'sawtooth', 0.4);
+      mostrarPopUp(`🔥 ESPECIAL! -5 HP`);
+      falar("Ataque especial!");
+
+      if (bHp <= 0) {
+        bHp = 0;
+        defeated = true;
+        clearInterval(timerInterval);
+        gold += bosses[bIndex].gold;
+        document.getElementById('log-txt').innerText = `🏆 DERROTADO COM ESPECIAL!`;
         document.getElementById('next-btn').style.display = 'block';
       }
       atualizarHUD();
@@ -273,7 +379,8 @@
       }
       bHp = bosses[bIndex].hp; reps = 0; defeated = false;
       document.getElementById('next-btn').style.display = 'none';
-      document.getElementById('log-txt').innerText = `Novo Boss! Você tem ${tempoMaxAtaque}s por ataque!`;
+      document.getElementById('log-txt').innerText = `Novo Boss! Preparar!`;
+      falar(`Novo inimigo: ${bosses[bIndex].name}`);
       iniciarTemporizador();
       atualizarHUD();
     }
@@ -282,7 +389,20 @@
       if (gold >= 15) {
         gold -= 15; 
         playerHp = Math.min(playerMaxHp, playerHp + 50);
-        document.getElementById('log-txt').innerText = "🧪 Poção consumida! +50 de Vida.";
+        document.getElementById('log-txt').innerText = "🧪 +50 de Vida!";
+        falar("Vida recuperada!");
+      } else {
+        document.getElementById('log-txt').innerText = "🪙 Moedas insuficientes!";
+      }
+      atualizarHUD();
+    }
+
+    function comprarAura(cor, preco) {
+      if (gold >= preco) {
+        gold -= preco;
+        corAura = cor;
+        document.getElementById('log-txt').innerText = "✨ Nova Aura equipada!";
+        falar("Aura equipada com sucesso!");
       } else {
         document.getElementById('log-txt').innerText = "🪙 Moedas insuficientes!";
       }
@@ -316,7 +436,8 @@
       ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
       if (results.poseLandmarks) {
-        drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#66fcf1', lineWidth: 3 });
+        // Usa a cor da Aura comprada na loja
+        drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: corAura, lineWidth: 3 });
         drawLandmarks(ctx, results.poseLandmarks, { color: '#ff4655', lineWidth: 2, radius: 4 });
 
         let ombro = results.poseLandmarks[11];
