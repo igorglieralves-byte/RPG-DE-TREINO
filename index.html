@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Quest - RPG Fitness & AI Cam</title>
+  
+  <!-- MediaPipe / AI para Visão Computacional -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body { background-color: #0d0e15; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+    
+    .game-container {
+      display: flex; flex-wrap: wrap; gap: 20px; max-width: 900px; width: 100%; justify-content: center;
+    }
+
+    .game-card {
+      background: #161823; width: 380px; border-radius: 20px; padding: 20px;
+      border: 1px solid #2a2d3d; text-align: center; position: relative; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Player HUD */
+    .player-hud { display: flex; align-items: center; background: #1f2232; padding: 10px 14px; border-radius: 12px; margin-bottom: 15px; }
+    .level-badge { background: #ff4655; color: white; font-weight: bold; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .player-info { flex: 1; margin: 0 10px; text-align: left; }
+    .bar-bg { background: #0d0e15; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .xp-fill { background: #ffc107; height: 100%; width: 0%; transition: width 0.3s; }
+    .hp-player-fill { background: #4caf50; height: 100%; width: 100%; transition: width 0.3s; }
+
+    /* Inventory & Gold */
+    .stats-row { display: flex; justify-content: space-between; font-size: 13px; color: #ffc107; margin-bottom: 15px; font-weight: bold; }
+
+    /* Boss Area */
+    .boss-avatar { font-size: 80px; margin: 10px 0; transition: transform 0.1s; user-select: none; }
+    .boss-name { font-size: 18px; font-weight: bold; color: #ff4655; letter-spacing: 1px; }
+    .boss-hp-bg { background: rgba(255, 70, 85, 0.2); height: 16px; border-radius: 8px; overflow: hidden; margin: 10px 0 4px 0; }
+    .boss-hp-fill { background: #ff4655; height: 100%; width: 100%; transition: width 0.2s; }
+
+    /* Action & Camera Container */
+    .camera-card {
+      background: #161823; width: 380px; border-radius: 20px; padding: 20px;
+      border: 1px solid #2a2d3d; display: flex; flex-direction: column; align-items: center;
+    }
+
+    .video-box { position: relative; width: 100%; height: 260px; background: #000; border-radius: 12px; overflow: hidden; }
+    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    .counter { font-size: 40px; font-weight: 900; margin: 10px 0; font-family: monospace; }
+    
+    .btn {
+      background: #ff4655; color: white; border: none; width: 100%; padding: 14px;
+      font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 8px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-secondary { background: #2a2d3d; }
+
+    .damage-popup {
+      position: absolute; color: #ff4655; font-size: 32px; font-weight: 900;
+      pointer-events: none; animation: floatUp 0.6s ease-out forwards; left: 50%; top: 35%;
+    }
+    @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <!-- JOGO / RPG HUD -->
+    <div class="game-card">
+      <div class="player-hud">
+        <div class="level-badge" id="player-level">1</div>
+        <div class="player-info">
+          <div style="display:flex; justify-size:space-between; font-size:12px;">
+            <strong>GUERREIRO</strong>
+            <span id="player-hp-text">100/100 HP</span>
+          </div>
+          <div class="bar-bg"><div class="hp-player-fill" id="player-hp-fill"></div></div>
+          <div class="bar-bg"><div class="xp-fill" id="xp-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <span>🪙 MOEDAS: <span id="gold-text">0</span></span>
+        <span>🔥 STREAK: <span id="streak-text">1</span> DIA</span>
+      </div>
+
+      <div style="font-size: 12px; color: #888;" id="location-text">📍 MAPA: FLORESTA (FASE 1/3)</div>
+      <div class="boss-avatar" id="boss-avatar">🧟</div>
+      <div class="boss-name" id="boss-name">ZUMBI SOMBRIO</div>
+      
+      <div class="boss-hp-bg"><div class="boss-hp-fill" id="boss-hp-fill"></div></div>
+      <div style="font-size: 13px; color: #aaa; margin-bottom: 15px;" id="boss-hp-text">10 / 10 HP</div>
+
+      <div style="font-size: 13px; color: #ddd; background: #1f2232; padding: 10px; border-radius: 8px;" id="log-text">
+        Faça o exercício em frente à câmera para atacar!
+      </div>
+      
+      <button class="btn btn-secondary" onclick="proximoBoss()" id="next-btn" style="display:none;">PRÓXIMA BATALHA ⚔️</button>
+    </div>
+
+    <!-- CÂMERA E CONTROLE DE EXERCÍCIO -->
+    <div class="camera-card">
+      <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;" id="exercise-title">EXERCÍCIO: FLEXÃO</div>
+      
+      <div class="video-box">
+        <video id="webcam" playsinline></video>
+        <canvas id="output_canvas"></canvas>
+      </div>
+
+      <div class="counter" id="counter-text">0 / 10</div>
+      
+      <button class="btn" id="start-cam-btn" onclick="iniciarCamera()">🎥 LIGAR CÂMERA & DETECTAR</button>
+      <button class="btn btn-secondary" onclick="executarRepeticaoManual()" style="margin-top:5px;">+1 REP MANUAL (SEM CÂMERA)</button>
+    </div>
+  </div>
+
+  <script>
+    // --- BANCO DE BOSSES E FASES ---
+    const bosses = [
+      { name: "ZUMBI SOMBRIO", avatar: "🧟", hp: 10, xp: 30, gold: 10, ex: "FLEXÃO" },
+      { name: "ESQUELETO GUARDIÃO", avatar: "💀", hp: 20, xp: 50, gold: 20, ex: "FLEXÃO" },
+      { name: "GOBLIN GUERREIRO", avatar: "👹", hp: 30, xp: 80, gold: 35, ex: "FLEXÃO" },
+      { name: "ORC CHEFE", avatar: "👺", hp: 50, xp: 120, gold: 50, ex: "FLEXÃO" },
+      { name: "DRAGÃO ANCIÃO", avatar: "🐉", hp: 100, xp: 300, gold: 150, ex: "FLEXÃO" }
+    ];
+
+    let currentBossIndex = 0;
+    let playerLevel = 1, playerXp = 0, maxXp = 100, gold = 0;
+    let bossHp = bosses[0].hp, repsDone = 0, isDefeated = false;
+
+    // --- CARREGAR PROGRESSO SALVO ---
+    function carregarJogo() {
+      const salvo = JSON.parse(localStorage.getItem('training_quest_save'));
+      if (salvo) {
+        playerLevel = salvo.level; playerXp = salvo.xp; maxXp = salvo.maxXp;
+        gold = salvo.gold; currentBossIndex = salvo.bossIndex;
+        bossHp = bosses[currentBossIndex].hp;
+      }
+      atualizarHUD();
+    }
+
+    function salvarJogo() {
+      localStorage.setItem('training_quest_save', JSON.stringify({
+        level: playerLevel, xp: playerXp, maxXp: maxXp, gold: gold, bossIndex: currentBossIndex
+      }));
+    }
+
+    // --- SISTEMA DE COMBATE ---
+    function executarRepeticaoManual() {
+      if (isDefeated) return;
+      repsDone++;
+      bossHp--;
+      mostrarDano("-1 HP");
+      
+      if (bossHp <= 0) {
+        bossHp = 0;
+        isDefeated = true;
+        derrotoBoss();
+      }
+      atualizarHUD();
+    }
+
+    function mostrarDano(texto) {
+      const popup = document.createElement('div');
+      popup.className = 'damage-popup';
+      popup.innerText = texto;
+      document.querySelector('.game-card').appendChild(popup);
+      setTimeout(() => popup.remove(), 600);
+    }
+
+    function derrotoBoss() {
+      const boss = bosses[currentBossIndex];
+      gold += boss.gold;
+      playerXp += boss.xp;
+      
+      if (playerXp >= maxXp) {
+        playerLevel++;
+        playerXp -= maxXp;
+        maxXp = Math.floor(maxXp * 1.5);
+      }
+
+      document.getElementById('boss-avatar').innerText = "💥";
+      document.getElementById('log-text').innerText = `🏆 VITÓRIA! +${boss.xp} XP e +${boss.gold} Moedas!`;
+      document.getElementById('next-btn').style.display = 'block';
+      salvarJogo();
+    }
+
+    function proximoBoss() {
+      if (currentBossIndex < bosses.length - 1) currentBossIndex++;
+      bossHp = bosses[currentBossIndex].hp;
+      repsDone = 0;
+      isDefeated = false;
+      document.getElementById('next-btn').style.display = 'none';
+      document.getElementById('log-text').innerText = "Batalha iniciada!";
+      atualizarHUD();
+    }
+
+    function atualizarHUD() {
+      const boss = bosses[currentBossIndex];
+      document.getElementById('boss-name').innerText = boss.name;
+      document.getElementById('boss-avatar').innerText = isDefeated ? "💥" : boss.avatar;
+      document.getElementById('boss-hp-fill').style.width = (bossHp / boss.hp * 100) + '%';
+      document.getElementById('boss-hp-text').innerText = `${bossHp} / ${boss.hp} HP`;
+      
+      document.getElementById('counter-text').innerText = `${repsDone} / ${boss.hp}`;
+      document.getElementById('player-level').innerText = playerLevel;
+      document.getElementById('xp-fill').style.width = (playerXp / maxXp * 100) + '%';
+      document.getElementById('gold-text').innerText = gold;
+    }
+
+    // --- DETECÇÃO DA CÂMERA (IA MEDIAPIPE) ---
+    let flexaoEstado = "CIMA";
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+
+    function calcularAngulo(A, B, C) {
+      let rad = Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
+      let angulo = Math.abs(rad * 180.0 / Math.PI);
+      if (angulo > 180.0) angulo = 360.0 - angulo;
+      return angulo;
+    }
+
+    function onResults(results) {
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.poseLandmarks) {
+        // Pontos do ombro (11), cotovelo (13) e pulso (15)
+        let ombro = results.poseLandmarks[11];
+        let cotovelo = results.poseLandmarks[13];
+        let pulso = results.poseLandmarks[15];
+
+        if (ombro && cotovelo && pulso) {
+          let angulo = calcularAngulo(ombro, cotovelo, pulso);
+
+          // Lógica de Flexão: Cotovelo < 90 graus (Desceu), Cotovelo > 160 (Subiu)
+          if (angulo < 90 && flexaoEstado === "CIMA") {
+            flexaoEstado = "BAIXO";
+          }
+          if (angulo > 160 && flexaoEstado === "BAIXO") {
+            flexaoEstado = "CIMA";
+            executarRepeticaoManual(); // Conta a repetição no jogo
+          }
+        }
+      }
+      canvasCtx.restore();
+    }
+
+    function iniciarCamera() {
+      document.getElementById('start-cam-btn').style.display = 'none';
+      const pose = new Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+      });
+      
+      pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
+      pose.onResults(onResults);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => { await pose.send({ image: videoElement }); },
+        width: 400, height: 300
+      });
+      camera.start();
+    }
+
+    carregarJogo();
+  </script>
+</body>
+</html>
